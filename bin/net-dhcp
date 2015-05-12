@@ -7,10 +7,10 @@ begin
   require 'dhcp'
   require 'net/dhcp'
   require 'socket'
-  require 'pcaplet'
+  require 'pcaprub'
 rescue LoadError
   STDERR.puts "Unable to load a required library.  Please ensure you have installed the following gems:"
-  STDERR.puts "  dhcp, ipaddress, ruby-pcap"
+  STDERR.puts "  dhcp, ipaddress, pcaprub"
   STDERR.puts "\nError was: #{$!.message}"
   exit 1
 end
@@ -19,18 +19,26 @@ server_thread = Thread.new do
   s = "Packets received by the filter:\n"
   s << '-'*s.size + "\n"
   
-  dhcpdump = Pcaplet.new('-s 4096')
+  # dhcpdump = Pcaplet.new('-s 4096')
 
-  DHCP_PACKET  = Pcap::Filter.new('port 67 or port 68', dhcpdump.capture)
+  # DHCP_PACKET  = Pcap::Filter.new('port 67 or port 68', dhcpdump.capture)
 
-  dhcpdump.add_filter(DHCP_PACKET)
-  dhcpdump.each_packet {|pkt|
-    msg = DHCP::Message.from_udp_payload(pkt.udp_data)
+  dhcpdump = PCAPRUB::Pcap.open_live('en0', 65535, true, 0)
+  dhcpdump.setfilter('bootp')
+
+  # dhcpdump.add_filter(DHCP_PACKET)
+  while 1==1
+    pkt = dhcpdump.next()
     
-    s << "#{pkt.src}:#{pkt.sport} > #{pkt.dst}:#{pkt.dport}\n"
-    s << msg.to_s
-    puts s if s
-  }
+    binding.pry 
+    
+    # msg = DHCP::Message.from_udp_payload(pkt.udp_data)
+    
+    # s << "#{pkt.src}:#{pkt.sport} > #{pkt.dst}:#{pkt.dport}\n"
+    # s << msg.to_s
+    # puts s if s
+    # }
+  end
 end
 
 discover = DHCP::Discover.new
